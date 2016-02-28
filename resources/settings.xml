@@ -1,0 +1,31 @@
+<settings>
+    <category label="30202">
+        <setting id="username" type="text" label="30101" default=""/>
+        <setting id="password" type="text" option="hidden" label="30102" default="" />
+        <setting type="sep" />
+        <setting id="useTMDb" type="bool" label="30135" default="true"/>
+        <setting id="updateDB" type="bool" label="30123" default="true"/>
+        <setting id="browseTvShows" type="bool" label="30120" default="true"/>
+    </category>
+    <category label="30203">
+        <setting id="forceView" type="bool" label="30108" default="true"/>
+        <setting id="viewIdVideos" type="number" label="30109" enable="eq(-1,true)" default="501"/>
+        <setting id="viewIdEpisodesNew" type="number" label="30119" enable="eq(-2,true)" default="503"/>
+        <setting id="viewIdActivity" type="number" label="30130" enable="eq(-3,true)" default="51"/>
+    </category>
+    <category label="30204">
+    	<setting id="debug" type="bool" label="30205" default="false"/>
+        <setting id="libraryPath" type="folder" label="30138" default="special://profile/addon_data/plugin.video.netflixbmc/library"/>
+
+        <setting type="lsep" label="30210" /> <!-- Browser Settings -->
+        <setting id="useChromeProfile" type="bool" label="30212" default="true"/>
+        <setting label="30213" type="action" enable="eq(-1,true)" action="RunPlugin(plugin://plugin.video.netflixbmc/?mode=chromePluginOptions)"/>
+        <setting id="remoteControl" type="bool" label="30137" default="false"/>
+        <setting id="dontUseKiosk" type="bool" label="30133" default="false"/>
+
+        <setting type="lsep" label="30211" /> <!-- Reset -->
+        <setting label="30132" type="action" action="RunPlugin(plugin://plugin.video.flixgrabber/?mode=deleteCache)"/>
+        <setting label="30124" type="action" action="RunPlugin(plugin://plugin.video.netflixbmc/?mode=deleteChromeUserData)"/>
+        <setting label="30139" type="action" action="RunPlugin(plugin://plugin.video.flixgrabber/?mode=resetAddon)"/>
+    </category>
+</settings>
