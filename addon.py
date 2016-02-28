@@ -39,7 +39,9 @@ def init():
     else:
         xbmc.log("Getting fresh data")
         netflixDict = {}
-        netflixDict[PROFILES_DICT_KEY] = netflix.Netflix(username, password, profilename=None, datadir=CHROME_USER_DATA_PATH).get_profiles()
+        
+        with netflix.Netflix(username, password, profilename=None, datadir=CHROME_USER_DATA_PATH) as flix:
+            netflixDict[PROFILES_DICT_KEY] = flix.get_profiles()
         # Save the netflix data for use later
         pickle.dump(netflixDict, open(PICKLE_FILE, "wb"))            
     
@@ -62,7 +64,9 @@ def profile_selection():
         if (not netflixDict.has_key(profilename)) or  \
            (len(netflixDict[profilename].items()) == 0): 
             xbmc.log("Getting fresh data")
-            netflixDict[profilename] = netflix.Netflix(username, password, profilename, datadir=CHROME_USER_DATA_PATH).get_categories()            
+            
+            with netflix.Netflix(username, password, profilename, datadir=CHROME_USER_DATA_PATH) as flix:
+                netflixDict[profilename] = flix.get_categories()            
             try:
                 os.remove(PICKLE_FILE)
             except:
@@ -70,10 +74,17 @@ def profile_selection():
              
             # Save the netflix data for use later
             pickle.dump(netflixDict, open(PICKLE_FILE, "wb"))
-            
-        for category, _ in netflixDict[profilename].items():
+                    
+        for category, _ in netflixDict[profilename].items():           
             url = build_url({'mode': 'category', 'profilename': profilename, 'category': category})
             li = xbmcgui.ListItem(category, iconImage='DefaultFolder.png')
+            
+            # Build context menu item
+            scriptPath = xbmc.translatePath('special://home/addons/'+addonId+'/contextMenu.py')
+            menuUrl = urllib.urlencode(({'mode': 'refresh_category', 'profilename' : profilename, 'category' : category}))
+            scriptCmd = 'XBMC.RunAddon(%s, %s)' % (addonId, menuUrl)
+            commands = [("Refresh", scriptCmd, )]                 
+            li.addContextMenuItems( commands )
             xbmcplugin.addDirectoryItem(handle=addon_handle, url=url,
                                     listitem=li, isFolder=True)          
     xbmcplugin.endOfDirectory(addon_handle)
@@ -82,10 +93,6 @@ def category_selection():
     profilename = args['profilename'][0]
     category = args['category'][0]
     
-#     scriptPath = xbmc.translatePath('special://home/addons/'+addonId+'/contextMenu.py')
-#     url = build_url({'mode': 'clear_category', 'category' : category})
-#     scriptCmd = 'XBMC.RunScript(%s, %s)' % (scriptPath, url)
-#     commands = [("Refresh", scriptCmd, )]     
     
     if os.access(PICKLE_FILE, os.R_OK):
         netflixDict = pickle.load(open(PICKLE_FILE, "rb"))        
@@ -94,7 +101,6 @@ def category_selection():
             for title, flixUrl in netflixDict[profilename][category].items():
                 url = build_url({'mode': 'play', 'profilename' : profilename, 'url': flixUrl})
                 li = xbmcgui.ListItem(title, iconImage='DefaultVideo.png')
-#                 li.addContextMenuItems( commands )
                 xbmcplugin.addDirectoryItem(handle=addon_handle, url=url, listitem=li)
 
     xbmcplugin.endOfDirectory(addon_handle)
@@ -139,6 +145,23 @@ def reset_addon():
     
     xbmcplugin.endOfDirectory(addon_handle)
     
+def refresh_category():
+    profilename = args['profilename'][0]
+    category = args['category'][0]
+    
+    if os.access(PICKLE_FILE, os.R_OK):
+        netflixDict = pickle.load(open(PICKLE_FILE, "rb"))             
+        if netflixDict.has_key(profilename) and netflixDict[profilename].has_key(category):
+            with netflix.Netflix(username, password, profilename, datadir=CHROME_USER_DATA_PATH) as flix:
+                netflixDict[profilename][category] = flix.get_categories(specific_category=category) 
+            
+        os.remove(PICKLE_FILE)
+    
+        # Save the netflix data for use later
+        pickle.dump(netflixDict, open(PICKLE_FILE, "wb"))           
+
+    profile_selection()
+    
 while (username == "" or password == ""):
     addon.openSettings()
 
@@ -159,3 +182,6 @@ elif mode[0] == 'deleteCache':
     
 elif mode[0] == 'resetAddon':
     reset_addon()
+elif mode[0] == 'refresh_category':
+    refresh_category()
+    

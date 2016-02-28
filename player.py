@@ -66,23 +66,23 @@ class PlayerWindow(xbmcgui.Window):
             	xbmc.log("received previous menu")
             	self.driver.quit()
             	self.close()				
-            if actionId in [Action.DOWN]:
+            elif actionId in [Action.DOWN]:
                 xbmc.log("received volume down")
                 ActionChains(driver).send_keys(Keys.ARROW_DOWN).perform()
-            if actionId in [Action.UP]:
+            elif actionId in [Action.UP]:
                 xbmc.log("received volume up")
                 ActionChains(driver).send_keys(Keys.ARROW_UP).perform()
                 
-            if actionId in [Action.SELECT_ITEM, Action.PAUSE]:
+            elif actionId in [Action.SELECT_ITEM, Action.PAUSE]:
             	xbmc.log("received pause/play")
             	ActionChains(driver).send_keys(Keys.SPACE).perform()
                 self.flix.click_continue_playing()
             	
-            if actionId in [Action.FORWARD, Action.RIGHT]:
+            elif actionId in [Action.FORWARD, Action.RIGHT]:
             	xbmc.log("received seek forward")			
             	ActionChains(driver).key_down(Keys.SHIFT).send_keys(Keys.ARROW_RIGHT).key_up(Keys.SHIFT).perform()
             	
-            if actionId in [Action.REWIND, Action.LEFT]:
+            elif actionId in [Action.REWIND, Action.LEFT]:
             	xbmc.log("received seek back")
             	ActionChains(driver).key_down(Keys.SHIFT).send_keys(Keys.ARROW_LEFT).key_up(Keys.SHIFT).perform()				
                 
@@ -94,7 +94,6 @@ ActionChains(driver).move_by_offset(1, 1).perform()
 
 	    
 window = PlayerWindow(driver=driver, flix=flix)
-# window.setDriver(driver)
 
 window.doModal()
 del window

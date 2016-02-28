@@ -28,7 +28,13 @@ class Netflix():
         
         if profilename:
             self.select_profile()
-        
+
+    def __enter__(self):
+        return self        
+    
+    def __exit__(self, exc_type, exc_value, traceback):
+        if self.driver:
+            self.driver.quit()        
         
     def login(self):
         '''Login to netflix'''
@@ -64,19 +70,7 @@ class Netflix():
     
     def click_through_to_main_page(self, element):    
         element.click()
-    
-        def find_category_div(ignored):
-            try:
-                elements = self.driver.find_elements_by_class_name(CATEGORY_ELEMENT_CLASSNAME)
-                for element in elements:
-                    if not element.is_displayed():
-                        return False
-                    
-                return True
-            except StaleElementReferenceException:
-                return True
-        
-        WebDriverWait(self.driver, 10, 1, (ElementNotVisibleException)).until(lambda x: x.find_element_by_class_name(CATEGORY_ELEMENT_CLASSNAME).is_displayed())
+        WebDriverWait(self.driver, 10, 1, (ElementNotVisibleException, StaleElementReferenceException)).until(lambda x: x.find_element_by_class_name(CATEGORY_ELEMENT_CLASSNAME).is_displayed())
     
     def select_profile(self):        
         profiles = self.driver.find_elements_by_class_name('profile-link')
@@ -96,7 +90,21 @@ class Netflix():
             profiles.append(name.text)
         return profiles   
     
-    def get_categories(self):
+    def get_category_titles(self, category_element):
+        # get video_id  and aria_label (title)
+        titles_dict = {}
+        titleCardDivConts = category_element.find_elements_by_class_name("title-card-container")
+        for titleCardDivCont in titleCardDivConts:
+            titleCardDivs = titleCardDivCont.find_elements_by_xpath("div")
+            for card in titleCardDivs:
+                title = card.get_attribute("aria-label")
+                data_reactid = card.get_attribute("data-reactid")
+                video_id = re.match(r".*title_([0-9]*)_.*", data_reactid).group(1)
+                titles_dict[title] = 'http://www.netflix.com/watch/' + video_id
+        
+        return OrderedDict(sorted(titles_dict.items(), key=lambda x: x[0]))    
+    
+    def get_categories(self, specific_category=None):
         try:
             categories_dict = {}
             category_count = 0
@@ -109,26 +117,18 @@ class Netflix():
                 categories = self.driver.find_elements_by_class_name(CATEGORY_ELEMENT_CLASSNAME)
                 if (cnt == len(categories)):
                     break
-            for result in categories:        
-                categories_dict[result.text] = {} 
-                # get video_id  and aria_label (title)
-                titleCardDivConts = result.find_elements_by_class_name("title-card-container")
-                for titleCardDivCont in titleCardDivConts:
-                    titleCardDivs = titleCardDivCont.find_elements_by_xpath("div")
-                    for card in titleCardDivs:
-                        title = card.get_attribute("aria-label")
-                        data_reactid = card.get_attribute("data-reactid")
-                        video_id = re.match(r".*title_([0-9]*)_.*", data_reactid).group(1)
-                        categories_dict[result.text][title] = 'http://www.netflix.com/watch/' + video_id
-                
-                categories_dict[result.text] = OrderedDict(sorted(categories_dict[result.text].items(), key=lambda x: x[0]))        
-                
+            for result in categories: 
+                if specific_category:
+                    if specific_category == result.text:
+                        return self.get_category_titles(result)
+                    else:
+                        continue
+                categories_dict[result.text] = self.get_category_titles(result)       
             categories_dict = OrderedDict(sorted(categories_dict.items(), key=lambda x: x[0]))
             return categories_dict    
         except StaleElementReferenceException:
             print "caught stale exception"
             return self.get_categories()    
-    
         
     def click_continue_playing(self):
         '''
